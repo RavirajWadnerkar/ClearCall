@@ -108,7 +108,7 @@ const Navbar = () => {
                       onClick={() => setIsAccountMenuOpen(false)}
                     >
                       <FileUp className="inline-block mr-2 h-4 w-4" />
-                      Upload Documents
+                      Dashboard
                     </Link>
                     <Link 
                       to="/account?tab=settings" 

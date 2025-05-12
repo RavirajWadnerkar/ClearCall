@@ -17,10 +17,13 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { isAuthenticated } from '@/lib/utils';
+//import { s3 } from '../awsConfig';
 
 const Dashboard = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [completedCalls, setCompletedCalls] = useState(0);
+  const [fileCount, setFileCount] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,6 +38,15 @@ const Dashboard = () => {
       setIsLoading(false);
     }, 1000);
 
+    fetch('http://localhost:5000/api/completed-calls') 
+      .then(response => response.json())
+      .then(data => {
+        setCompletedCalls(data.length); // Count the number of completed calls
+      })
+      .catch(error => {
+        console.error('Error fetching completed calls:', error);
+      });
+
     return () => clearTimeout(timer);
   }, [navigate]);
 
@@ -44,16 +56,47 @@ const Dashboard = () => {
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!selectedFile) {
       return;
     }
-
-    // Simulate successful upload after 2 seconds
-    setTimeout(() => {
-      setSelectedFile(null);
-    }, 2000);
+  
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+  
+    try {
+      const response = await fetch('http://localhost:5000/upload', {
+        method: 'POST',
+        body: formData,
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        console.log('File uploaded successfully:', data.message);
+        setSelectedFile(null); // Clear the selected file after upload
+      } else {
+        console.error('Error uploading file:', data.error);
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
   };
+  
+  useEffect(() => {
+    const getFileCount = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/file-count');
+        const data = await response.json();
+        setFileCount(data.file_count); // Set the number of files in state
+      } catch (error) {
+        console.error('Error fetching file count:', error);
+      }
+    };
+  
+    getFileCount();
+  }, [selectedFile]); // Triggered when a file is uploaded
+  
   
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
@@ -82,8 +125,8 @@ const Dashboard = () => {
         <div className="p-4 border-b border-gray-100">
           <Link to="/" className="flex items-center space-x-2 text-xl font-medium">
             <span className="flex items-center">
-              <span className="text-primary font-bold">Clear</span>
-              <span className="font-semibold">Call</span>
+              <span className="text-primary font-bold text-white">Clear</span>
+              <span className="font-semibold text-white">Call</span>
             </span>
           </Link>
         </div>
@@ -94,17 +137,17 @@ const Dashboard = () => {
               <Home className="h-5 w-5 mr-3" />
               Dashboard
             </Link>
-            <Link to="/dashboard/upload" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
+            {/* <Link to="/dashboard/upload" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
               <FileUp className="h-5 w-5 mr-3" />
               Upload Files
-            </Link>
+            </Link> */}
             <Link to="/voice-complaint" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
               <Mic className="h-5 w-5 mr-3" />
-              Voice Complaint
+              Voice Support
             </Link>
             <Link to="/live-support" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
               <MessageSquare className="h-5 w-5 mr-3" />
-              Live Support
+              Chat Support
             </Link>
             <Link to="/analytics" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
               <BarChart className="h-5 w-5 mr-3" />
@@ -141,8 +184,8 @@ const Dashboard = () => {
             <div className="bg-white p-6 rounded-xl shadow-subtle border border-gray-100">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-500 mb-1">Complaints Resolved</p>
-                  <h3 className="text-2xl font-bold">28</h3>
+                  <p className="text-sm text-gray-500 mb-1">Requests Handled</p>
+                  <h3 className="text-2xl font-bold">{completedCalls}</h3>
                   <p className="text-xs text-green-600 flex items-center mt-1">
                     <TrendingUp className="h-3 w-3 mr-1" /> 
                     This month
@@ -174,7 +217,7 @@ const Dashboard = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Documents Uploaded</p>
-                  <h3 className="text-2xl font-bold">12</h3>
+                  <h3 className="text-2xl font-bold">{fileCount}</h3>
                   <p className="text-xs text-gray-500 mt-1">Active policies</p>
                 </div>
                 <div className="bg-primary/10 p-2 rounded-lg">
@@ -187,7 +230,7 @@ const Dashboard = () => {
           {/* Quick actions */}
           <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-xl shadow-subtle border border-gray-100 hover:shadow-md transition-shadow">
+            {/* <div className="bg-white p-6 rounded-xl shadow-subtle border border-gray-100 hover:shadow-md transition-shadow">
               <div className="mb-4">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                   <FileUp className="h-6 w-6 text-primary" />
@@ -198,7 +241,7 @@ const Dashboard = () => {
               <Link to="/dashboard/upload">
                 <Button variant="outline" className="w-full">Upload Files</Button>
               </Link>
-            </div>
+            </div> */}
             
             <div className="bg-white p-6 rounded-xl shadow-subtle border border-gray-100 hover:shadow-md transition-shadow">
               <div className="mb-4">
@@ -206,10 +249,10 @@ const Dashboard = () => {
                   <Mic className="h-6 w-6 text-primary" />
                 </div>
               </div>
-              <h3 className="text-lg font-semibold mb-2">Voice Complaint</h3>
-              <p className="text-gray-500 mb-4">Submit a voice complaint for instant AI resolution</p>
+              <h3 className="text-lg font-semibold mb-2">Voice Support</h3>
+              <p className="text-gray-500 mb-4">Submit a voice request for instant AI resolution</p>
               <Link to="/voice-complaint">
-                <Button variant="outline" className="w-full">Submit Complaint</Button>
+                <Button variant="outline" className="w-full">Submit Request</Button>
               </Link>
             </div>
             
@@ -220,7 +263,7 @@ const Dashboard = () => {
                 </div>
               </div>
               <h3 className="text-lg font-semibold mb-2">View Analytics</h3>
-              <p className="text-gray-500 mb-4">Monitor AI performance and complaint trends</p>
+              <p className="text-gray-500 mb-4">Monitor AI performance and request trends</p>
               <Link to="/analytics">
                 <Button variant="outline" className="w-full">Analytics Dashboard</Button>
               </Link>

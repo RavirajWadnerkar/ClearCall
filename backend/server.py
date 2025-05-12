@@ -1,4 +1,6 @@
 import os
+import json
+from openai import OpenAI
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
@@ -7,6 +9,7 @@ from datetime import datetime, timedelta
 import mysql.connector
 import traceback
 from dotenv import load_dotenv
+from awsConfig import upload_to_s3, AWS_BUCKET_NAME, s3_client
 
 # Load environment variables
 load_dotenv()
@@ -19,7 +22,7 @@ app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'default_secret_key')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 
 # Initialize extensions
-CORS(app, resources={r"/*": {"origins": ["http://localhost:8080", "http://127.0.0.1:8080"]}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": ["http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:8081", "http://127.0.0.1:8081"]}}, supports_credentials=True)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
@@ -46,9 +49,9 @@ def get_db_connection():
 # Route for root URL
 @app.route('/')
 def home():
-    # Added debug statement to check if the root route is intercepting requests
+    # Return a simple JSON response instead of trying to render a template
     print("Root route hit")
-    return render_template('index.html')
+    return jsonify({"message": "ClearCall API is running"}), 200
 
 # Route to handle favicon.ico requests
 @app.route('/favicon.ico')
@@ -178,6 +181,91 @@ def logout():
 def protected():
     current_user = get_jwt_identity()
     return jsonify({"logged_in_as": current_user})
+
+# Route to serve the completed_calls.json file
+@app.route('/api/completed-calls', methods=['GET'])
+def get_completed_calls():
+    try:
+        # Get the path to the completed_calls.json file
+        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'completed_calls.json')
+        
+        # Check if the file exists
+        if not os.path.exists(file_path):
+            # Return an empty array if file doesn't exist
+            return jsonify([]), 200
+            
+        # Read the file and return its contents
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+            
+        return jsonify(data), 200
+        
+    except Exception as e:
+        print(f"Error serving completed_calls.json: {e}")
+        return jsonify({"error": "Failed to retrieve call data"}), 500
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    """Handle file upload and store it in S3."""
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    # Upload the file to S3
+    upload_message = upload_to_s3(file, AWS_BUCKET_NAME)
+
+    if "File uploaded" in upload_message:
+        return jsonify({"message": upload_message}), 200
+    else:
+        return jsonify({"error": upload_message}), 500
+
+# backend/server.py (add this endpoint to your server.py)
+@app.route('/file-count', methods=['GET'])
+def get_file_count():
+    """Fetch the count of files in the S3 bucket."""
+    try:
+        response = s3_client.list_objects_v2(Bucket=AWS_BUCKET_NAME)
+        file_count = len(response.get('Contents', []))
+        return jsonify({"file_count": file_count}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Retrieve the OpenAI API key from the environment variable
+openai_api_key = os.getenv('OPENAI_API_KEY')
+
+client = OpenAI(api_key=openai_api_key)
+
+@app.route('/api/claude', methods=['POST'])
+def get_gpt_response():
+    data = request.get_json()
+    user_message = data.get('message')
+
+    if not user_message:
+        return jsonify({'error': 'No message provided'}), 400
+
+    try:
+        # Create a chat completion request
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": user_message}
+            ],
+            max_tokens=150
+        )
+
+        # Extract the assistant's reply
+        reply = response.choices[0].message.content.strip()
+
+        return jsonify({'reply': reply})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

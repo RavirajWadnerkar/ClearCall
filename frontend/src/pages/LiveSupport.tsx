@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { MessageSquare, ArrowRight, User, Phone, Home, Mic, BarChart, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 const LiveSupport = () => {
   const [messages, setMessages] = useState<{text: string, sender: 'user' | 'ai', timestamp: Date}[]>([
@@ -55,14 +57,16 @@ const LiveSupport = () => {
   };
   
   return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <div className="w-64 bg-white shadow-subtle h-screen sticky top-0 border-r border-gray-100">
         <div className="p-4 border-b border-gray-100">
           <Link to="/" className="flex items-center space-x-2 text-xl font-medium">
             <span className="flex items-center">
-              <span className="text-primary font-bold">Clear</span>
-              <span className="font-semibold">Call</span>
+              <span className="text-primary font-bold text-white">Clear</span>
+              <span className="font-semibold text-white">Call</span>
               <Phone className="inline-block ml-1.5 h-4 w-4 text-primary" />
             </span>
           </Link>
@@ -76,11 +80,11 @@ const LiveSupport = () => {
             </Link>
             <Link to="/voice-complaint" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
               <Mic className="h-5 w-5 mr-3" />
-              Voice Complaint
+              Voice Support
             </Link>
             <Link to="/live-support" className="flex items-center px-4 py-3 bg-accent text-primary rounded-md font-medium">
               <MessageSquare className="h-5 w-5 mr-3" />
-              Live Support
+              Chat Support
             </Link>
             <Link to="/analytics" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
               <BarChart className="h-5 w-5 mr-3" />
@@ -176,6 +180,8 @@ const LiveSupport = () => {
           </div>
         </div>
       </div>
+    </div>
+    <Footer />
     </div>
   );
 };

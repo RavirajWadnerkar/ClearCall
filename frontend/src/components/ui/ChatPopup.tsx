@@ -9,41 +9,59 @@ const ChatPopup = ({ onClose }: { onClose: () => void }) => {
   const chatAreaRef = useRef<HTMLDivElement>(null);
 
   const handleSendMessage = async () => {
-    if (!input.trim()) return;
-
+    if (!input.trim()) return; // Prevent empty messages
+  
+    // Add the user's message to the chat
     const userMessage = { sender: 'user', text: input };
     setMessages((prev) => [...prev, userMessage]);
-    setInput('');
-
+    setInput(''); // Clear the input field
+  
     try {
-      const response = await fetch('/api/claude', {
+      // Send the message to the backend (Flask)
+      const response = await fetch('http://127.0.0.1:5000/api/claude', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ message: input }),
       });
-
+  
       if (!response.ok) {
         throw new Error('Failed to fetch response');
       }
-
+  
+      // Get the response from the backend (GPT model)
       const data = await response.json();
-      const aiMessage = { sender: 'Claude', text: data.reply };
-      setMessages((prev) => [...prev, aiMessage]);
+      
+      // If GPT response is successful, add it to the chat
+      if (data.reply) {
+        const aiMessage = { sender: 'Claude', text: data.reply };
+        setMessages((prev) => [...prev, aiMessage]);
+      } else {
+        // Handle cases where the response is not in the expected format
+        setMessages((prev) => [
+          ...prev,
+          { sender: 'Claude', text: 'Sorry, something went wrong. Please try again.' },
+        ]);
+      }
+  
     } catch (error) {
-      setMessages((prev) => [...prev, { sender: 'Claude', text: 'Sorry, something went wrong. Please try again.' }]);
+      // Handle errors (network issues, backend down, etc.)
+      setMessages((prev) => [
+        ...prev,
+        { sender: 'Claude', text: 'Sorry, something went wrong. Please try again.' },
+      ]);
     }
   };
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };  
 
   const handleMinimize = () => {
     setIsMinimized(!isMinimized);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSendMessage();
-    }
   };
 
   return (

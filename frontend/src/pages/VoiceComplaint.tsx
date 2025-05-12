@@ -118,10 +118,10 @@ const VoiceComplaint = () => {
               <Home className="h-5 w-5 mr-3" />
               Dashboard
             </Link>
-            <Link to="/dashboard/upload" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
+            {/* <Link to="/dashboard/upload" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
               <FileUp className="h-5 w-5 mr-3" />
               Upload Files
-            </Link>
+            </Link> */}
             <Link to="/voice-complaint" className="flex items-center px-4 py-3 bg-accent text-primary rounded-md font-medium">
               <Mic className="h-5 w-5 mr-3" />
               Voice Complaint

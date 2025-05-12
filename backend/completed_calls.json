@@ -1,0 +1,506 @@
+[
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "3",
+        "start_time": "2025-05-12 04:22:13+00:00",
+        "sid": "CA679b788ed44592a544221d5fed3991ae"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "4",
+        "start_time": "2025-05-12 04:20:12+00:00",
+        "sid": "CA7f7264429d3d0026ed5f81d93e2c01a1"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "9",
+        "start_time": "2025-05-12 04:19:28+00:00",
+        "sid": "CA09d9a8c12d690cf8af993d2dd4d27e06"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "9",
+        "start_time": "2025-05-12 02:10:59+00:00",
+        "sid": "CAe05950b70b7026d058918cdcebdb9723"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "68",
+        "start_time": "2025-05-11 21:47:21+00:00",
+        "sid": "CAb5a4238ab363cfbf2e1af0b818513531"
+    },
+    {
+        "from": "+16692042798",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "7",
+        "start_time": "2025-05-11 05:24:35+00:00",
+        "sid": "CAc2e6478d465fd5436bd88a30ba9c41eb"
+    },
+    {
+        "from": "+16692042798",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "3",
+        "start_time": "2025-05-11 05:24:21+00:00",
+        "sid": "CA9ae1133d9c09e239a0f8253d9050bb71"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "2",
+        "start_time": "2025-05-11 04:56:55+00:00",
+        "sid": "CAd6d58e2292c1a5d4fcbb1312a63f1c59"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "2",
+        "start_time": "2025-05-11 04:56:42+00:00",
+        "sid": "CA4b119e7f5232862127458e849f96cb4a"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "3",
+        "start_time": "2025-05-11 04:56:27+00:00",
+        "sid": "CA9fc4835e0a5b8a3c7673cae26129c13b"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "8",
+        "start_time": "2025-05-11 04:55:16+00:00",
+        "sid": "CAb0dcf76170946882751f08eb88ad20e4"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "9",
+        "start_time": "2025-05-11 04:46:30+00:00",
+        "sid": "CA0f402076d9c0a7a984d6598f44e42019"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "11",
+        "start_time": "2025-05-11 04:36:56+00:00",
+        "sid": "CA02c1a97ee74f9ff37e62a13af2f51839"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "44",
+        "start_time": "2025-05-10 04:10:03+00:00",
+        "sid": "CA560153b2dd43e35b3a5d8d0e3be9f5f2"
+    },
+    {
+        "from": "+16692042798",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "55",
+        "start_time": "2025-05-10 04:02:20+00:00",
+        "sid": "CA51ad037571b97dfddceb10674262bec6"
+    },
+    {
+        "from": "+16692042798",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "69",
+        "start_time": "2025-05-10 04:00:49+00:00",
+        "sid": "CAd9b48b20813d79226e85f457d6a28e6a"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "33",
+        "start_time": "2025-05-10 03:56:25+00:00",
+        "sid": "CA73f6cc9d0d73a2943c995b998c62520c"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "23",
+        "start_time": "2025-05-10 03:55:04+00:00",
+        "sid": "CA9eda3aaa5ecd15bba4a8574bed0bb874"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "47",
+        "start_time": "2025-05-10 03:54:09+00:00",
+        "sid": "CA8c06ac3d01b953a600e5550a64b947cd"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "66",
+        "start_time": "2025-05-10 03:50:13+00:00",
+        "sid": "CAcaa10d7e3ac0ef46a9c302ec968ccbda"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "58",
+        "start_time": "2025-05-10 03:48:54+00:00",
+        "sid": "CAb614e2017e694eb19ae793bbae61c053"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "46",
+        "start_time": "2025-05-10 03:45:44+00:00",
+        "sid": "CA20adfa8291c645759e97f3727011726b"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "30",
+        "start_time": "2025-05-10 03:45:11+00:00",
+        "sid": "CAe30b37a8c3569d763a6c6bb616678a62"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "19",
+        "start_time": "2025-05-10 03:44:40+00:00",
+        "sid": "CA1b19d378766da2c40f8ff49fdf4f5396"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "7",
+        "start_time": "2025-05-10 03:41:32+00:00",
+        "sid": "CA688cba011d40e8fc21d5611800a09ff9"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "61",
+        "start_time": "2025-05-10 03:40:03+00:00",
+        "sid": "CA0989ac08754eb90af55fcf89ff7d35be"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "32",
+        "start_time": "2025-05-10 03:39:07+00:00",
+        "sid": "CA0cc53c612d0efb84f2c0eae1c4c226f4"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "23",
+        "start_time": "2025-05-10 03:36:19+00:00",
+        "sid": "CAb30f05f44e52bd40e3df98fbe3586461"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "20",
+        "start_time": "2025-05-10 03:34:25+00:00",
+        "sid": "CAed1c5b0ac3e8c7cc0cfb6706b4fc5469"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "141",
+        "start_time": "2025-05-10 03:24:09+00:00",
+        "sid": "CAecbcd98b0537bc687faf8da687d8794a"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "68",
+        "start_time": "2025-05-10 03:22:56+00:00",
+        "sid": "CAcfce395312e71177da3e32c125e25eeb"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "44",
+        "start_time": "2025-05-10 03:22:04+00:00",
+        "sid": "CAc0ebcb2292f215b5dd0ce81215576336"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "137",
+        "start_time": "2025-05-10 03:19:44+00:00",
+        "sid": "CA358ac19639b36f875c6aa2f37a0e76a9"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "40",
+        "start_time": "2025-05-10 03:18:49+00:00",
+        "sid": "CA0550d1778546aab6c9b5a25c70d33727"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "24",
+        "start_time": "2025-05-10 03:15:03+00:00",
+        "sid": "CA7e3fa78588b8564d28c495ddc88c75a7"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "19",
+        "start_time": "2025-05-10 03:14:41+00:00",
+        "sid": "CAf034123c3bb14d3e3e44e022a76ab661"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "61",
+        "start_time": "2025-05-10 03:13:37+00:00",
+        "sid": "CA13aa26a6c063d66deb68f30b582b24dc"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "34",
+        "start_time": "2025-05-10 03:12:59+00:00",
+        "sid": "CA752a507c4f73c6135de3a5b287d62169"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "176",
+        "start_time": "2025-05-10 03:09:00+00:00",
+        "sid": "CAdb8249f3ed457fc69ede8f3c203ef1bb"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "53",
+        "start_time": "2025-05-10 03:08:03+00:00",
+        "sid": "CAce319385145d5d5ed30c96ff132aec5d"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "88",
+        "start_time": "2025-05-10 03:04:59+00:00",
+        "sid": "CA45352afde073ac1db8be7b226498769e"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "52",
+        "start_time": "2025-05-10 03:02:33+00:00",
+        "sid": "CA7dd1f9ba7388cc6da0075a9d5e510b28"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "19",
+        "start_time": "2025-05-10 03:01:58+00:00",
+        "sid": "CA1aabc29940073c955f3f4f908b791920"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "15",
+        "start_time": "2025-05-10 03:00:32+00:00",
+        "sid": "CA2ef5d797a6db132dc519fb320ccaea15"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "14",
+        "start_time": "2025-05-10 02:59:22+00:00",
+        "sid": "CAde800333591dbf23f979da1d228e2eef"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "16",
+        "start_time": "2025-05-10 02:58:47+00:00",
+        "sid": "CA77d4eff6370afc39ce32ce11c6a4a3dd"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "14",
+        "start_time": "2025-05-10 02:58:27+00:00",
+        "sid": "CAc70fc5c112cad1617784161f79a86f06"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "16",
+        "start_time": "2025-05-10 02:55:07+00:00",
+        "sid": "CA21be8255c7774e92de0794adec909641"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "22",
+        "start_time": "2025-05-10 02:53:26+00:00",
+        "sid": "CAf7fe4e9c9ca936e6d819a61864c2f3d5"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "5",
+        "start_time": "2025-05-10 02:53:08+00:00",
+        "sid": "CA886c9fefadb9bf2ca16a628ee7372ec7"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "4",
+        "start_time": "2025-05-10 02:50:06+00:00",
+        "sid": "CAc59dbc3b5a28f00908276541e5a11978"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "12",
+        "start_time": "2025-05-10 02:43:36+00:00",
+        "sid": "CAcb3a4e6737dd2f0f6648a4a08de5bf2e"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "15",
+        "start_time": "2025-05-10 02:41:02+00:00",
+        "sid": "CA822624c5f5a2732cbffbfb6b4003d0e7"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "15",
+        "start_time": "2025-05-10 02:38:26+00:00",
+        "sid": "CA7c3b240010f0bc34e19666e915a829cb"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "283",
+        "start_time": "2025-05-09 08:44:45+00:00",
+        "sid": "CAce7e0a242476f68dbb35f3f1b8734036"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "60",
+        "start_time": "2025-05-09 08:38:29+00:00",
+        "sid": "CA0ce490741f969303febddb881a4d147b"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "9",
+        "start_time": "2025-05-09 08:27:08+00:00",
+        "sid": "CA6d041222df93b7f716f9b40446d47101"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "11",
+        "start_time": "2025-05-09 08:15:38+00:00",
+        "sid": "CA8c5ecab3b88eef2e8123f858c83b7a6e"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "12",
+        "start_time": "2025-05-09 07:01:22+00:00",
+        "sid": "CAf52fc69e04c86a045bbe98597531b1fa"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "13",
+        "start_time": "2025-05-09 06:33:54+00:00",
+        "sid": "CAd33319df35b5cf89a9b149924665ed49"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "3",
+        "start_time": "2025-05-07 08:18:05+00:00",
+        "sid": "CA87ce7ef8e044ad9f35c1d5c029553185"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "8",
+        "start_time": "2025-05-07 08:17:16+00:00",
+        "sid": "CA3e9be0e2f6aa59a3ceda2d06847a260b"
+    },
+    {
+        "from": "+16699778876",
+        "to": "+16692027351",
+        "status": "completed",
+        "duration": "12",
+        "start_time": "2025-05-07 08:04:49+00:00",
+        "sid": "CA683f1a38c3b800d4a9d4bc6b2ce172e1"
+    }
+]
