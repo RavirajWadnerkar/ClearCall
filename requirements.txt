@@ -4,3 +4,5 @@ flask-bcrypt
 flask-jwt-extended
 mysql-connector
 python-dotenv
+openai
+boto3

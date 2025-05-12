@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, X } from 'lucide-react';
 
@@ -7,6 +7,13 @@ const ChatPopup = ({ onClose }: { onClose: () => void }) => {
   const [messages, setMessages] = useState<{ sender: string; text: string }[]>([]);
   const [input, setInput] = useState('');
   const chatAreaRef = useRef<HTMLDivElement>(null);
+
+  // Add auto-scroll effect
+  useEffect(() => {
+    if (chatAreaRef.current) {
+      chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   const handleSendMessage = async () => {
     if (!input.trim()) return; // Prevent empty messages
@@ -82,10 +89,9 @@ const ChatPopup = ({ onClose }: { onClose: () => void }) => {
       </div>
 
       {!isMinimized && (
-        <>
-          <div
+        <>          <div
             ref={chatAreaRef}
-            className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50"
+            className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 scroll-smooth"
             style={{ maxHeight: 'calc(100% - 4rem)' }}
           >
             {messages.length === 0 && (

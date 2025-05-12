@@ -9,7 +9,7 @@ import Footer from '@/components/Footer';
 const LiveSupport = () => {
   const [messages, setMessages] = useState<{text: string, sender: 'user' | 'ai', timestamp: Date}[]>([
     {
-      text: "Hello! How can I assist you today with ClearCall?",
+      text: "Hello! I'm ClearCall AI Assistant. How can I help you today?",
       sender: 'ai',
       timestamp: new Date()
     }
@@ -23,8 +23,7 @@ const LiveSupport = () => {
     localStorage.removeItem('userId');
     navigate('/');
   };
-  
-  const handleSendMessage = (e: React.FormEvent) => {
+    const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!newMessage.trim()) return;
@@ -43,13 +42,43 @@ const LiveSupport = () => {
     setNewMessage('');
     setIsTyping(true);
 
-    setTimeout(() => {
+    try {
+      // Send the message to the backend (Flask)
+      const response = await fetch('http://127.0.0.1:5000/api/claude', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: newMessage }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch response');
+      }
+
+      // Get the response from the GPT model
+      const data = await response.json();
+      
+      if (data.reply) {
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { text: data.reply, sender: 'ai', timestamp: new Date() },
+        ]);
+      } else {
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { text: 'Sorry, something went wrong. Please try again.', sender: 'ai', timestamp: new Date() },
+        ]);
+      }
+    } catch (error) {
+      console.error('Error:', error);
       setMessages((prevMessages) => [
         ...prevMessages,
-        { text: 'Thank you for your message. We will get back to you shortly.', sender: 'ai', timestamp: new Date() },
+        { text: 'Sorry, something went wrong. Please try again.', sender: 'ai', timestamp: new Date() },
       ]);
+    } finally {
       setIsTyping(false);
-    }, 2000);
+    }
   };
   
   const formatTime = (date: Date) => {
