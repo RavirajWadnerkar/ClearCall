@@ -13,7 +13,8 @@ import {
   Upload,
   CheckCircle,
   Clock,
-  TrendingUp
+  TrendingUp,
+  Phone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { isAuthenticated } from '@/lib/utils';
@@ -142,13 +143,10 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="flex">
+      <div className="flex pt-16">
         {/* Sidebar */}
-        <div className="w-64 bg-white shadow-subtle h-screen sticky top-0 border-r border-gray-100">
-          <div className="p-4 border-b border-gray-100">
-            {/* Removed duplicate ClearCall logo */}
+        <div className="w-64 bg-white shadow-subtle h-[calc(100vh-4rem)] sticky top-16 border-r border-gray-100">          <div className="p-4">
           </div>
-          
           <nav className="mt-6 px-4">
             <div className="space-y-1">
               <Link to="/dashboard" className="flex items-center px-4 py-3 bg-accent text-primary rounded-md font-medium">
@@ -158,10 +156,9 @@ const Dashboard = () => {
               <Link to="/voice-complaint" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
                 <Mic className="h-5 w-5 mr-3" />
                 Voice Support
-              </Link>
-              <Link to="/live-support" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
+              </Link>              <Link to="/live-support" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
                 <MessageSquare className="h-5 w-5 mr-3" />
-                Chat Support
+                Live Support
               </Link>
               <Link to="/analytics" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
                 <BarChart className="h-5 w-5 mr-3" />
@@ -185,7 +182,8 @@ const Dashboard = () => {
           </nav>
         </div>
           {/* Main content */}
-        <div className="flex-1">          <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-24">
+        <div className="flex-1">
+          <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-24">
             <div className="mb-12">
               <h1 className="text-3xl font-bold mb-3">Welcome to ClearCall</h1>
               <p className="text-gray-500">AI-powered voice-based customer support at your fingertips</p>
