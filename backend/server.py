@@ -140,6 +140,7 @@ def login():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
+        
         try:
             # Fetch user by email
             cursor.execute("SELECT * FROM users WHERE email = %s", (email,))

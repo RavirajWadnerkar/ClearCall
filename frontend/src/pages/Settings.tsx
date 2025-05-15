@@ -3,6 +3,7 @@ import { Globe, User, Lock, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Home, 
   FileUp, 
@@ -15,6 +16,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 
 const Settings = () => {
+  const [profileData, setProfileData] = useState({
+    name: 'John Smith',
+    email: 'john.smith@example.com',
+    company: 'Acme Inc.'
+  });
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -23,22 +29,85 @@ const Settings = () => {
   const [language, setLanguage] = useState('english');
   const [voiceStyle, setVoiceStyle] = useState('neutral');
   const navigate = useNavigate();
+  const { toast } = useToast();
   
-  const handlePasswordChange = (e: React.FormEvent) => {
+  const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "New password and confirmation do not match",
+        variant: "destructive",
+      });
       return;
     }
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       setPasswordData({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       });
-    }, 1000);
+      
+      toast({
+        title: "Success",
+        description: "Password has been updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update password. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Reset form to default values
+      setProfileData({
+        name: '',
+        email: '',
+        company: ''
+      });
+      
+      toast({
+        title: "Success",
+        description: "Profile information has been updated",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePreferencesSave = async () => {
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "Success",
+        description: "Your preferences have been saved",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save preferences. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   const handleLogout = () => {
@@ -133,24 +202,32 @@ const Settings = () => {
                 
                 <div className="p-6">
                   <TabsContent value="account" className="mt-0">
-                    <h2 className="text-xl font-semibold mb-6">Account Information</h2>
-                    <div className="space-y-4">
+                    <h2 className="text-xl font-semibold mb-6">Account Information</h2>                    <form onSubmit={handleProfileUpdate} className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                        <Input defaultValue="John Smith" />
+                        <Input 
+                          value={profileData.name}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
+                        />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                        <Input defaultValue="john.smith@example.com" />
+                        <Input 
+                          value={profileData.email}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                        />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
-                        <Input defaultValue="Acme Inc." />
+                        <Input 
+                          value={profileData.company}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, company: e.target.value }))}
+                        />
                       </div>
                       <div className="pt-4">
-                        <Button>Update Profile</Button>
+                        <Button type="submit">Update Profile</Button>
                       </div>
-                    </div>
+                    </form>
                   </TabsContent>
                   
                   <TabsContent value="security" className="mt-0">
@@ -232,9 +309,8 @@ const Settings = () => {
                           ))}
                         </div>
                       </div>
-                      
-                      <div className="pt-4">
-                        <Button>Save Preferences</Button>
+                        <div className="pt-4">
+                        <Button onClick={handlePreferencesSave}>Save Preferences</Button>
                       </div>
                     </div>
                   </TabsContent>
