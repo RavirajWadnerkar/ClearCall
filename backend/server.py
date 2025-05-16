@@ -574,20 +574,77 @@ def process_voice_complaint():
 
 @app.route('/api/complaint-summary', methods=['GET', 'OPTIONS'])
 def get_complaint_summary():
-    """Return summary data for AI resolved vs human escalated complaints."""
+    """Return percentage breakdown of AI-resolved vs human-escalated inquiries."""
     if request.method == 'OPTIONS':
         return handle_preflight()
-        
+
     try:
-        # For demo purposes, returning mock data
-        # In a production environment, this would query the database
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT COUNT(*) AS total_inquiries FROM inquiries")
+        total_inquiries = cursor.fetchone()['total_inquiries']
+
+        cursor.execute("SELECT COUNT(*) AS escalations FROM human_escalation")
+        escalations = cursor.fetchone()['escalations']
+
+        if total_inquiries == 0:
+            ai_resolved_pct = 0
+            human_escalated_pct = 0
+        else:
+            ai_resolved_pct = round(((total_inquiries - escalations) / total_inquiries) * 100, 2)
+            human_escalated_pct = round((escalations / total_inquiries) * 100, 2)
+
         return jsonify({
-            "ai_resolved": 72,
-            "human_escalated": 28
+            "ai_resolved": ai_resolved_pct,
+            "human_escalated": human_escalated_pct
         }), 200
+
     except Exception as e:
         logger.error(f"Error fetching complaint summary: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+# Route to get the resolution rate
+@app.route('/api/resolution-rate', methods=['GET'])
+def get_resolution_rate():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Get total inquiries
+        cursor.execute("SELECT COUNT(*) AS total FROM inquiries")
+        total_inquiries = cursor.fetchone()["total"] or 0
+
+        # Get total escalations
+        cursor.execute("SELECT COUNT(*) AS escalated FROM human_escalation")
+        total_escalated = cursor.fetchone()["escalated"] or 0
+
+        # Calculate AI-resolved
+        ai_resolved = max(total_inquiries - total_escalated, 0)
+
+        # Calculate resolution rate
+        if total_inquiries == 0:
+            resolution_rate = 0
+        else:
+            resolution_rate = round((ai_resolved / total_inquiries) * 100, 2)
+
+        return jsonify({"resolution_rate": resolution_rate}), 200
+
+    except Exception as e:
+        logger.error(f"Resolution rate calculation failed: {str(e)}")
+        return jsonify({"error": "Failed to calculate resolution rate."}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 @app.route('/api/human-escalations', methods=['GET'])
 def get_human_escalations():
@@ -628,7 +685,7 @@ def claude_chat():
         chat_response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are One Piece Store Assistant, a helpful and knowledgeable AI assistant. Keep responses concise and clear."},
+                {"role": "system", "content": "You represent ClearCall company. You are a helpful and knowledgeable AI assistant talking on behalf of ClearCall company staff. Keep responses concise and clear."},
                 {"role": "user", "content": user_message}
             ]
         )

@@ -52,6 +52,7 @@ const Analytics = () => {
   const [fileCount, setFileCount] = useState(0);
   const [completedCalls, setCompletedCalls] = useState(0);
   const [humanEscalations, setHumanEscalations] = useState([]);
+  const [resolutionRate, setResolutionRate] = useState(0);
 
 useEffect(() => {
   // Trigger sync
@@ -74,6 +75,11 @@ useEffect(() => {
   axios.get('http://localhost:5000/api/monthly-summary')
     .then(res => setResolutionData(res.data))
     .catch(err => console.error('Bar chart error:', err));
+
+  // Fetch resolution rate
+  axios.get('http://localhost:5000/api/resolution-rate')
+    .then(res => setResolutionRate(res.data.resolution_rate))
+    .catch(err => console.error('Error fetching resolution rate:', err));
 
   // Fetch human escalations
     axios.get('http://localhost:5000/api/human-escalations')
@@ -170,7 +176,7 @@ useEffect(() => {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Resolution Rate</p>
-                    <h3 className="text-2xl font-bold">72%</h3>
+                    <h3 className="text-2xl font-bold">{resolutionRate}%</h3>
                     <p className="text-xs text-green-600 flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" /> 
                       +5.2% from last month
