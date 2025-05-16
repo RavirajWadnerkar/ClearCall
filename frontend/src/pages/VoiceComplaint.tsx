@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Mic, 
@@ -16,6 +16,14 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import API_BASE_URL from '@/config/api';
+
+interface AudioRecorderState {
+  mediaRecorder: MediaRecorder | null;
+  audioChunks: Blob[];
+  audioBlob: Blob | null;
+  stream: MediaStream | null;
+}
 
 const VoiceComplaint = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -24,8 +32,364 @@ const VoiceComplaint = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [recordingTimer, setRecordingTimer] = useState<NodeJS.Timeout | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [processingStage, setProcessingStage] = useState<'idle' | 'uploading' | 'transcribing' | 'analyzing'>('idle');
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
+
+  const [recorderState, setRecorderState] = useState<AudioRecorderState>({
+    mediaRecorder: null,
+    audioChunks: [],
+    audioBlob: null,
+    stream: null
+  });
+  
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Add effect to check authentication
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    
+    if (!userId || !isLoggedIn) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to use this feature",
+        variant: "destructive",
+      });
+      navigate('/');
+    }
+  }, [navigate, toast]);
+
+  useEffect(() => {
+    // Cleanup function to stop recording and clear stream when component unmounts
+    return () => {
+      if (recorderState.mediaRecorder) {
+        recorderState.mediaRecorder.stop();
+      }
+      if (recorderState.stream) {
+        recorderState.stream.getTracks().forEach(track => track.stop());
+      }
+      if (recordingTimer) {
+        clearInterval(recordingTimer);
+      }
+    };
+  }, [recorderState.mediaRecorder, recorderState.stream, recordingTimer]);
+
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const retryWithBackoff = async (operation: () => Promise<any>, stage: string) => {
+    let currentRetry = 0;
+    const baseDelay = 1000; // Start with 1 second delay
+
+    while (currentRetry < MAX_RETRIES) {
+      try {
+        return await operation();
+      } catch (error) {
+        currentRetry++;
+        if (currentRetry === MAX_RETRIES) {
+          throw error;
+        }
+        
+        const delay = baseDelay * Math.pow(2, currentRetry - 1); // Exponential backoff
+        toast({
+          title: `Retrying ${stage}`,
+          description: `Attempt ${currentRetry} of ${MAX_RETRIES}. Waiting ${delay/1000} seconds...`,
+        });
+        
+        await sleep(delay);
+      }
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      const audioChunks: Blob[] = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunks.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        setRecorderState(prev => ({ ...prev, audioBlob }));
+      };
+
+      setRecorderState({
+        mediaRecorder,
+        audioChunks,
+        audioBlob: null,
+        stream
+      });
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingComplete(false);
+      setAiResponse(null);
+
+      // Start recording timer
+      const timer = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      setRecordingTimer(timer);
+
+      // Automatically stop after 60 seconds
+      setTimeout(() => {
+        if (mediaRecorder.state === 'recording') {
+          stopRecording();
+          toast({
+            title: "Recording stopped",
+            description: "Maximum recording time reached (60 seconds)",
+          });
+        }
+      }, 60000);
+
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      toast({
+        title: "Error",
+        description: "Could not access microphone. Please check permissions.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (recorderState.mediaRecorder && recorderState.mediaRecorder.state === 'recording') {
+      recorderState.mediaRecorder.stop();
+      recorderState.stream?.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+      setRecordingComplete(true);
+      
+      if (recordingTimer) {
+        clearInterval(recordingTimer);
+      }
+
+      toast({
+        title: "Recording stopped",
+        description: `Recorded for ${recordingTime} seconds`,
+      });
+    }
+  };
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
+  const generateUniqueFileName = () => {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const userId = localStorage.getItem('userId');
+    
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "User ID not found. Please log in again.",
+        variant: "destructive",
+      });
+      navigate('/');
+      return null;
+    }
+    
+    return `voice_complaints/${userId}/${timestamp}_complaint.wav`;
+  };
+
+  const validateAudioBlob = (blob: Blob): boolean => {
+    // Check file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    if (blob.size > maxSize) {
+      toast({
+        title: "Error",
+        description: "Recording is too large. Maximum size is 10MB.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Check file type
+    if (!blob.type.startsWith('audio/')) {
+      toast({
+        title: "Error",
+        description: "Invalid file format. Only audio files are allowed.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      toast({
+        title: "Authentication Error",
+        description: "Please log in to submit a complaint",
+        variant: "destructive",
+      });
+      navigate('/');
+      return;
+    }
+
+    if (!recordingComplete || !recorderState.audioBlob) {
+      toast({
+        title: "Recording Required",
+        description: "Please record your complaint before submitting",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const fileName = generateUniqueFileName();
+    if (!fileName) {
+      return;
+    }
+
+    if (!validateAudioBlob(recorderState.audioBlob)) {
+      return;
+    }
+
+    setIsProcessing(true);
+    setUploadProgress(0);
+    setProcessingStage('uploading');
+
+    try {
+      // Create form data for file upload
+      const formData = new FormData();
+      formData.append('file', recorderState.audioBlob, fileName);
+
+      // Upload with retry mechanism
+      await retryWithBackoff(async () => {
+        const uploadPromise = new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+              const progress = Math.round((event.loaded / event.total) * 100);
+              setUploadProgress(progress);
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status === 200) {
+              resolve(JSON.parse(xhr.responseText));
+            } else {
+              reject(new Error(`Upload failed with status: ${xhr.status}`));
+            }
+          };
+          xhr.onerror = () => reject(new Error('Upload failed'));
+          
+          xhr.open('POST', `${API_BASE_URL}/upload`);
+          xhr.send(formData);
+        });
+
+        return await uploadPromise;
+      }, 'file upload');
+      
+      toast({
+        title: "Upload Complete",
+        description: "Processing your complaint...",
+      });
+
+      // Process with AI
+      setProcessingStage('transcribing');
+      await retryWithBackoff(async () => {
+        const aiProcessingResponse = await fetch(`${API_BASE_URL}/api/process-voice-complaint`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Access-Control-Allow-Credentials': 'true'
+          },
+          credentials: 'include',
+          mode: 'cors',
+          body: JSON.stringify({
+            file_path: fileName
+          }),
+        });
+
+        if (!aiProcessingResponse.ok) {
+          const errorData = await aiProcessingResponse.json().catch(() => ({}));
+          throw new Error(errorData.error || `Failed to process complaint: ${aiProcessingResponse.status}`);
+        }
+
+        const aiData = await aiProcessingResponse.json();
+        setProcessingStage('analyzing');
+
+        if (!aiData.success) {
+          throw new Error(aiData.error || 'Failed to process complaint');
+        }
+
+        setAiResponse(aiData.response);
+
+        // Show the transcript in a toast for verification
+        toast({
+          title: "Transcript Ready",
+          description: aiData.transcript,
+          duration: 5000,
+        });
+          
+        toast({
+          title: "Success",
+          description: "Your complaint has been processed successfully",
+        });
+
+      }, 'AI processing');
+
+    } catch (error) {
+      console.error('Error submitting complaint:', error);
+      setIsProcessing(false);
+      setUploadProgress(0);
+      setProcessingStage('idle');
+      
+      // More specific error messages based on error type
+      let errorMessage = "Failed to submit complaint. Please try again.";
+      if (error instanceof Error) {
+        if (error.message.includes('status: 413')) {
+          errorMessage = "Recording is too large. Please try a shorter message.";
+        } else if (error.message.includes('network')) {
+          errorMessage = "Network connection issue. Please check your internet and try again.";
+        } else if (error.message.includes('process complaint')) {
+          errorMessage = "AI processing failed. Our team will review it manually.";
+        }
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+      setUploadProgress(0);
+      setProcessingStage('idle');
+    }
+  };
+
+  const handleRefresh = () => {
+    setIsRecording(false);
+    setRecordingTime(0);
+    setRecordingComplete(false);
+    setIsProcessing(false);
+    setAiResponse(null);
+    if (recordingTimer) {
+      clearInterval(recordingTimer);
+    }
+    setRecorderState({
+      mediaRecorder: null,
+      audioChunks: [],
+      audioBlob: null,
+      stream: null
+    });
+  };
   
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
@@ -37,81 +401,6 @@ const VoiceComplaint = () => {
     });
     
     navigate('/');
-  };
-  
-  const toggleRecording = () => {
-    if (isRecording) {
-      // Stop recording
-      setIsRecording(false);
-      setRecordingComplete(true);
-      if (recordingTimer) {
-        clearInterval(recordingTimer);
-      }
-      toast({
-        title: "Recording stopped",
-        description: `Recorded for ${recordingTime} seconds`,
-      });
-    } else {
-      // Start recording
-      setIsRecording(true);
-      setRecordingComplete(false);
-      setRecordingTime(0);
-      setAiResponse(null);
-      
-      // Simulate recording time increase
-      const timer = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
-      setRecordingTimer(timer);
-      
-      // Automatically stop after 60 seconds
-      setTimeout(() => {
-        clearInterval(timer);
-        if (isRecording) {
-          setIsRecording(false);
-          setRecordingComplete(true);
-          toast({
-            title: "Recording stopped",
-            description: "Maximum recording time reached (60 seconds)",
-          });
-        }
-      }, 60000);
-    }
-  };
-  
-  const handleSubmit = () => {
-    if (!recordingComplete) {
-      toast({
-        title: "Error",
-        description: "Please record your complaint first",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsProcessing(true);
-    
-    // Simulate AI processing
-    setTimeout(() => {
-      setIsProcessing(false);
-      setAiResponse("Thank you for bringing this to our attention. Your complaint has been successfully logged in our system. Our dedicated support team will review your case and reach out to you within the next 24 hours.");
-      
-      toast({
-        title: "Complaint Logged",
-        description: "Our team will contact you shortly",
-      });
-    }, 3000);
-  };
-  
-  const handleRefresh = () => {
-    setIsRecording(false);
-    setRecordingTime(0);
-    setRecordingComplete(false);
-    setIsProcessing(false);
-    setAiResponse(null);
-    if (recordingTimer) {
-      clearInterval(recordingTimer);
-    }
   };
   
   return (
@@ -202,14 +491,60 @@ const VoiceComplaint = () => {
                   </Button>
                   
                   {recordingComplete && (
-                    <Button 
-                      onClick={handleSubmit} 
-                      disabled={isProcessing}
-                      className="gap-2"
-                    >
-                      {isProcessing ? "Processing..." : "Submit Complaint"}
-                      {!isProcessing && <Upload className="h-4 w-4" />}
-                    </Button>
+                    <div className="space-y-4">
+                      <Button 
+                        onClick={handleSubmit} 
+                        disabled={isProcessing}
+                        className="w-full gap-2"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            {processingStage === 'uploading' && uploadProgress > 0 ? `Uploading... ${uploadProgress}%` : 'Processing...'}
+                          </>
+                        ) : (
+                          <>
+                            Submit Complaint
+                            <Upload className="h-4 w-4" />
+                          </>
+                        )}
+                      </Button>
+                      
+                      {isProcessing && (
+                        <div className="mt-6">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-center space-x-2">
+                              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                              <span className="text-primary font-medium">
+                                {processingStage === 'uploading' && 'Uploading recording...'}
+                                {processingStage === 'transcribing' && 'Transcribing audio...'}
+                                {processingStage === 'analyzing' && 'Analyzing complaint...'}
+                              </span>
+                            </div>
+                            
+                            {processingStage === 'uploading' && uploadProgress > 0 && (
+                              <div>
+                                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                                  <div 
+                                    className="bg-primary h-2.5 rounded-full transition-all duration-300" 
+                                    style={{ width: `${uploadProgress}%` }}
+                                  />
+                                </div>
+                                <p className="text-sm text-gray-500">{uploadProgress}% uploaded</p>
+                              </div>
+                            )}
+                            
+                            {(processingStage === 'transcribing' || processingStage === 'analyzing') && (
+                              <div className="flex justify-center space-x-2">
+                                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
