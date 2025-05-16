@@ -31,10 +31,10 @@ const Account = () => {
                       <CreditCard className="h-5 w-5 mr-2" />
                       Subscription
                     </TabsTrigger>
-                    <TabsTrigger value="settings" className="justify-start w-full py-2 h-auto data-[state=active]:bg-primary/10">
+                    {/* <TabsTrigger value="settings" className="justify-start w-full py-2 h-auto data-[state=active]:bg-primary/10">
                       <Settings className="h-5 w-5 mr-2" />
                       Settings
-                    </TabsTrigger>
+                    </TabsTrigger> */}
                   </TabsList>
                   
                   <div className="mt-8 pt-6 border-t border-gray-200">
@@ -73,9 +73,9 @@ const Account = () => {
                           defaultValue="Acme Inc."
                         />
                       </div>
-                      <div className="pt-4">
+                      {/* <div className="pt-4">
                         <Button>Save Changes</Button>
-                      </div>
+                      </div> */}
                     </div>
                   </TabsContent>
                   
@@ -90,7 +90,7 @@ const Account = () => {
                       <div className="flex justify-between items-center">
                         <div>
                           <p className="text-sm text-gray-500">Current Plan</p>
-                          <p className="text-2xl font-bold">Pro Plan</p>
+                          <p className="text-2xl font-bold">Enterprise Plan</p>
                           <div className="bg-primary/10 text-primary text-xs rounded-full px-2 py-1 inline-block mt-2">
                             Active
                           </div>

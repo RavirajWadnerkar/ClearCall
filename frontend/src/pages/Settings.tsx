@@ -132,13 +132,13 @@ const Settings = () => {
                 <Home className="h-5 w-5 mr-3" />
                 Dashboard
               </Link>
-              <Link to="/dashboard/upload" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
+              {/* <Link to="/dashboard/upload" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
                 <FileUp className="h-5 w-5 mr-3" />
                 Upload Files
-              </Link>
+              </Link> */}
               <Link to="/voice-complaint" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
                 <Mic className="h-5 w-5 mr-3" />
-                Voice Complaint
+                Voice Support
               </Link>
               <Link to="/live-support" className="flex items-center px-4 py-3 text-gray-600 hover:bg-accent hover:text-primary rounded-md transition-colors">
                 <MessageSquare className="h-5 w-5 mr-3" />
@@ -190,13 +190,13 @@ const Settings = () => {
                       <Lock className="h-4 w-4 mr-2" />
                       Security
                     </TabsTrigger>
-                    <TabsTrigger 
+                    {/* <TabsTrigger 
                       value="preferences" 
                       className="data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-14 px-6"
                     >
                       <Mic className="h-4 w-4 mr-2" />
                       Voice & Language
-                    </TabsTrigger>
+                    </TabsTrigger> */}
                   </TabsList>
                 </div>
                 
