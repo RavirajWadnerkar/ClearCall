@@ -42,13 +42,13 @@ const ChatPopup = ({ onClose }: { onClose: () => void }) => {
       
       // If GPT response is successful, add it to the chat
       if (data.reply) {
-        const aiMessage = { sender: 'Claude', text: data.reply };
+        const aiMessage = { sender: 'Clara', text: data.reply };
         setMessages((prev) => [...prev, aiMessage]);
       } else {
         // Handle cases where the response is not in the expected format
         setMessages((prev) => [
           ...prev,
-          { sender: 'Claude', text: 'Sorry, something went wrong. Please try again.' },
+          { sender: 'Clara', text: 'Sorry, something went wrong. Please try again.' },
         ]);
       }
   
@@ -56,7 +56,7 @@ const ChatPopup = ({ onClose }: { onClose: () => void }) => {
       // Handle errors (network issues, backend down, etc.)
       setMessages((prev) => [
         ...prev,
-        { sender: 'Claude', text: 'Sorry, something went wrong. Please try again.' },
+        { sender: 'Clara', text: 'Sorry, something went wrong. Please try again.' },
       ]);
     }
   };
@@ -77,7 +77,7 @@ const ChatPopup = ({ onClose }: { onClose: () => void }) => {
       onClick={() => isMinimized && setIsMinimized(false)}
     >
       <div className="flex items-center justify-between p-2 border-b border-gray-200 bg-gray-100">
-        <h3 className="text-sm font-semibold text-gray-800">Live Chat - Powered by Claude</h3>
+        <h3 className="text-sm font-semibold text-gray-800">Live Chat with Clara - Powered by AI</h3>
         <div className="flex space-x-2">
           <button onClick={(e) => { e.stopPropagation(); handleMinimize(); }} className="text-gray-500 hover:text-gray-700">
             <ArrowUpDown size={16} />
