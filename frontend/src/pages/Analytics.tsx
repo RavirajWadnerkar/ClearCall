@@ -32,21 +32,6 @@ import {
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 
-// Sample data for charts
-// const resolutionData = [
-//   { name: 'Jan', resolved: 65, escalated: 15 },
-//   { name: 'Feb', resolved: 59, escalated: 12 },
-//   { name: 'Mar', resolved: 80, escalated: 8 },
-//   { name: 'Apr', resolved: 81, escalated: 10 },
-//   { name: 'May', resolved: 76, escalated: 11 },
-//   { name: 'Jun', resolved: 85, escalated: 7 },
-// ];
-
-// const pieData = [
-//   { name: 'Resolved by AI', value: 72 },
-//   { name: 'Escalated to Humans', value: 28 },
-// ];
-
 const COLORS = ['#0088FE', '#FF8042'];
 
 const issueCategories = [
@@ -66,6 +51,7 @@ const Analytics = () => {
   const [activeView, setActiveView] = useState('overview');
   const [fileCount, setFileCount] = useState(0);
   const [completedCalls, setCompletedCalls] = useState(0);
+  const [humanEscalations, setHumanEscalations] = useState([]);
 
 useEffect(() => {
   // Trigger sync
@@ -88,6 +74,15 @@ useEffect(() => {
   axios.get('http://localhost:5000/api/monthly-summary')
     .then(res => setResolutionData(res.data))
     .catch(err => console.error('Bar chart error:', err));
+
+  // Fetch human escalations
+    axios.get('http://localhost:5000/api/human-escalations')
+  .then((res) => {
+    setHumanEscalations(res.data);
+  })
+  .catch((err) => {
+    console.error('Error fetching human escalation data:', err);
+  });
 
   // Fetch file count
   axios.get('http://localhost:5000/file-count')
@@ -302,27 +297,23 @@ useEffect(() => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {issueCategories.map((issue, index) => (
+                    {humanEscalations.map((entry, index) => (
                       <tr key={index}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {issue.category}
+                          {index + 1}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {issue.count}
+                          {entry.caller_number}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <div className="flex items-center">
-                            <span className="mr-2">{issue.percentage}%</span>
-                            <div className="w-24 bg-gray-200 rounded-full h-2.5">
-                              <div 
-                                className="bg-primary h-2.5 rounded-full" 
-                                style={{ width: `${issue.percentage}%` }}
-                              ></div>
-                            </div>
-                          </div>
+                          {new Date(entry.initiated_at).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {entry.reason}
                         </td>
                       </tr>
                     ))}
+
                   </tbody>
                 </table>
               </div>

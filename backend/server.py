@@ -589,6 +589,28 @@ def get_complaint_summary():
         logger.error(f"Error fetching complaint summary: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/human-escalations', methods=['GET'])
+def get_human_escalations():
+    try:    
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT caller_number, initiated_at, reason 
+            FROM human_escalation
+            ORDER BY initiated_at DESC
+        """)
+        results = cursor.fetchall()
+        return jsonify(results), 200
+    except Exception as e:
+        logger.error(f"Error fetching human escalations: {e}")
+        return jsonify({"error": "Failed to fetch human escalations"}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
 @app.route('/api/claude', methods=['POST', 'OPTIONS'])
 def claude_chat():
     """Handle chat messages with AI."""
