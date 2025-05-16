@@ -23,6 +23,7 @@ const VoiceComplaint = () => {
   const [recordingComplete, setRecordingComplete] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [recordingTimer, setRecordingTimer] = useState<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -43,6 +44,9 @@ const VoiceComplaint = () => {
       // Stop recording
       setIsRecording(false);
       setRecordingComplete(true);
+      if (recordingTimer) {
+        clearInterval(recordingTimer);
+      }
       toast({
         title: "Recording stopped",
         description: `Recorded for ${recordingTime} seconds`,
@@ -58,6 +62,7 @@ const VoiceComplaint = () => {
       const timer = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
+      setRecordingTimer(timer);
       
       // Automatically stop after 60 seconds
       setTimeout(() => {
@@ -71,8 +76,6 @@ const VoiceComplaint = () => {
           });
         }
       }, 60000);
-      
-      return () => clearInterval(timer);
     }
   };
   
@@ -91,13 +94,24 @@ const VoiceComplaint = () => {
     // Simulate AI processing
     setTimeout(() => {
       setIsProcessing(false);
-      setAiResponse("Based on our company policy regarding service interruptions, you are eligible for a credit on your next bill. I've processed this automatically, and you'll see a $25 credit reflected on your next statement. Is there anything else I can help you with?");
+      setAiResponse("Thank you for bringing this to our attention. Your complaint has been successfully logged in our system. Our dedicated support team will review your case and reach out to you within the next 24 hours.");
       
       toast({
-        title: "AI Response Ready",
-        description: "Your complaint has been processed",
+        title: "Complaint Logged",
+        description: "Our team will contact you shortly",
       });
     }, 3000);
+  };
+  
+  const handleRefresh = () => {
+    setIsRecording(false);
+    setRecordingTime(0);
+    setRecordingComplete(false);
+    setIsProcessing(false);
+    setAiResponse(null);
+    if (recordingTimer) {
+      clearInterval(recordingTimer);
+    }
   };
   
   return (
@@ -209,8 +223,8 @@ const VoiceComplaint = () => {
                 </div>
                 
                 <div className="mt-6 flex justify-end space-x-3">
-                  <Button variant="outline">Request Human Support</Button>
-                  <Button>Accept Resolution</Button>
+                  <Button variant="outline" onClick={handleRefresh}>Submit New Complaint</Button>
+                  <Button onClick={handleRefresh}>Accept Resolution</Button>
                 </div>
               </div>
             )}
