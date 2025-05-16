@@ -17,9 +17,9 @@ import Navbar from '@/components/Navbar';
 
 const Settings = () => {
   const [profileData, setProfileData] = useState({
-    name: 'John Smith',
-    email: 'john.smith@example.com',
-    company: 'Acme Inc.'
+    name: '',
+    email: '',
+    company: ''
   });
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
