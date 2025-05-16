@@ -14,6 +14,9 @@ from awsConfig import upload_to_s3, AWS_BUCKET_NAME, s3_client
 import tempfile
 from functools import wraps
 import time
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
 
 # Configure logging
 logging.basicConfig(
@@ -31,6 +34,25 @@ app = Flask(__name__)
 # Configure app
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'default_secret_key')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+
+# Initialize rate limiter
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
+
+# Initialize Talisman for security headers
+Talisman(app,
+    content_security_policy={
+        'default-src': "'self'",
+        'img-src': '*',
+        'script-src': ["'self'", "'unsafe-inline'"],
+        'style-src': ["'self'", "'unsafe-inline'"]
+    },
+    force_https=False  # Set to True in production
+)
 
 # Initialize extensions with updated CORS configuration
 CORS(app, 
@@ -461,6 +483,41 @@ def handle_preflight():
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
     return response
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for monitoring."""
+    try:
+        # Test database connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT 1')
+        cursor.close()
+        conn.close()
+
+        # Test S3 connection
+        s3_client.list_buckets()
+
+        return jsonify({
+            "status": "healthy",
+            "checks": {
+                "database": "connected",
+                "s3": "connected"
+            },
+            "timestamp": datetime.now().isoformat()
+        }), 200
+    except mysql.connector.Error as db_err:
+        return jsonify({
+            "status": "unhealthy",
+            "error": f"Database error: {str(db_err)}",
+            "timestamp": datetime.now().isoformat()
+        }), 500
+    except Exception as e:
+        return jsonify({
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
