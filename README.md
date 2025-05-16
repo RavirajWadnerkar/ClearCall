@@ -41,7 +41,7 @@ A modern web application for processing voice complaints using AI-powered transc
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/yourusername/ClearCall.git
+   git clone https://github.com/RavirajWadnerkar/ClearCall.git
    cd ClearCall
    ```
 
