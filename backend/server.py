@@ -14,13 +14,10 @@ from awsConfig import upload_to_s3, AWS_BUCKET_NAME, s3_client
 import tempfile
 from functools import wraps
 import time
-<<<<<<< HEAD
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
-=======
 from twilio.rest import Client
->>>>>>> 3a9dd5f617bd6604ea449f0f2c51b59df08493d1
 
 # Configure logging
 logging.basicConfig(
