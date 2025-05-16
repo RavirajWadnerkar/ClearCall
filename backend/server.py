@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from openai import OpenAI
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
@@ -10,6 +11,16 @@ import mysql.connector
 import traceback
 from dotenv import load_dotenv
 from awsConfig import upload_to_s3, AWS_BUCKET_NAME, s3_client
+import tempfile
+from functools import wraps
+import time
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -21,8 +32,19 @@ app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'default_secret_key')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 
-# Initialize extensions
-CORS(app, resources={r"/*": {"origins": ["http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:8081", "http://127.0.0.1:8081"]}}, supports_credentials=True)
+# Initialize extensions with updated CORS configuration
+CORS(app, 
+     resources={
+         r"/*": {
+             "origins": ["http://localhost:8000", "http://127.0.0.1:8000", "http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:8081", "http://127.0.0.1:8081"],
+             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+             "allow_headers": ["Content-Type", "Authorization", "Accept", "X-Requested-With", "Access-Control-Allow-Credentials"],
+             "expose_headers": ["Content-Type", "Authorization"],
+             "supports_credentials": True,
+             "max_age": 120
+         }
+     }
+)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
@@ -37,14 +59,51 @@ db_config = {
 
 def get_db_connection():
     try:
-        print("Attempting to connect to the database with the following configuration:")
-        print(f"Host: {db_config['host']}, Port: {db_config['port']}, User: {db_config['user']}, Database: {db_config['database']}")
+        logger.info("Attempting to connect to the database")
         connection = mysql.connector.connect(**db_config)
-        print("Database connection successful.")
+        logger.info("Database connection successful")
         return connection
     except mysql.connector.Error as err:
-        print(f"Database connection failed: {err}")
+        logger.error(f"Database connection failed: {err}")
         raise
+
+def init_db():
+    """Initialize database tables if they don't exist."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Create voice_complaints table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS voice_complaints (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                s3_file_path VARCHAR(255) NOT NULL,
+                transcript TEXT,
+                ai_response TEXT,
+                status ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        """)
+        
+        logger.info("Database tables initialized successfully")
+        conn.commit()
+
+    except mysql.connector.Error as err:
+        logger.error(f"Error initializing database: {err}")
+        raise
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+# Initialize database tables when the application starts
+with app.app_context():
+    init_db()
 
 # Route for root URL
 @app.route('/')
@@ -140,6 +199,7 @@ def login():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
+        
         try:
             # Fetch user by email
             cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
@@ -239,33 +299,168 @@ openai_api_key = os.getenv('OPENAI_API_KEY')
 
 client = OpenAI(api_key=openai_api_key)
 
-@app.route('/api/claude', methods=['POST'])
-def get_gpt_response():
-    data = request.get_json()
-    user_message = data.get('message')
+def retry_with_backoff(max_retries=3, initial_delay=1):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            delay = initial_delay
+            last_exception = None
+            
+            for retry in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_exception = e
+                    if retry < max_retries - 1:
+                        logger.warning(f"Attempt {retry + 1} failed: {str(e)}. Retrying in {delay} seconds...")
+                        time.sleep(delay)
+                        delay *= 2  # Exponential backoff
+                    else:
+                        logger.error(f"All {max_retries} attempts failed. Last error: {str(e)}")
+                        raise last_exception
+            
+            raise last_exception
+        return wrapper
+    return decorator
 
-    if not user_message:
-        return jsonify({'error': 'No message provided'}), 400
+@retry_with_backoff()
+def download_from_s3(bucket, key, local_path):
+    logger.info(f"Downloading file from S3: {bucket}/{key} to {local_path}")
+    s3_client.download_file(bucket, key, local_path)
+    logger.info("S3 download successful")
 
-    try:
-        # Create a chat completion request
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": user_message}
-            ],
-            max_tokens=150
+@retry_with_backoff()
+def transcribe_audio(audio_file):
+    logger.info("Starting audio transcription")
+    with open(audio_file, 'rb') as f:
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=f,
+            response_format="text"
         )
+    logger.info("Audio transcription successful")
+    return transcript
 
-        # Extract the assistant's reply
-        reply = response.choices[0].message.content.strip()
+@retry_with_backoff()
+def generate_ai_response(transcript):
+    logger.info("Generating AI response")
+    chat_response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a helpful customer service AI assistant. Analyze the customer's complaint and provide a professional, empathetic response."},
+            {"role": "user", "content": transcript}
+        ]
+    )
+    logger.info("AI response generated successfully")
+    return chat_response.choices[0].message.content
 
-        return jsonify({'reply': reply})
+@app.route('/api/process-voice-complaint', methods=['POST', 'OPTIONS'])
+def process_voice_complaint():
+    if request.method == 'OPTIONS':
+        return handle_preflight()
+        
+    try:
+        data = request.get_json()
+        s3_file_path = data.get('file_path')
+        
+        if not s3_file_path:
+            logger.error("No file path provided in request")
+            return jsonify({'error': 'No file path provided'}), 400
+
+        temp_file_path = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                temp_file_path = temp_file.name
+                logger.info(f"Created temporary file: {temp_file_path}")
+                
+            # Download file from S3
+            try:
+                download_from_s3(AWS_BUCKET_NAME, s3_file_path, temp_file_path)
+            except Exception as s3_error:
+                logger.error(f"S3 download error: {str(s3_error)}")
+                return jsonify({'error': f'Failed to download file from S3: {str(s3_error)}'}), 500
+
+            # Transcribe audio
+            try:
+                transcript = transcribe_audio(temp_file_path)
+                logger.info(f"Transcript generated: {transcript[:100]}...")
+            except Exception as whisper_error:
+                logger.error(f"Transcription error: {str(whisper_error)}")
+                return jsonify({'error': f'Failed to transcribe audio: {str(whisper_error)}'}), 500
+
+            # Generate AI response
+            try:
+                ai_response = generate_ai_response(transcript)
+                logger.info("AI response generated successfully")
+            except Exception as gpt_error:
+                logger.error(f"AI response generation error: {str(gpt_error)}")
+                return jsonify({'error': f'Failed to generate AI response: {str(gpt_error)}'}), 500
+
+            # Store the complaint in the database
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                
+                insert_query = """
+                    INSERT INTO voice_complaints (
+                        user_id,
+                        s3_file_path,
+                        transcript,
+                        ai_response,
+                        status,
+                        created_at
+                    ) VALUES (%s, %s, %s, %s, %s, NOW())
+                """
+                
+                user_id = get_jwt_identity()
+                cursor.execute(insert_query, (
+                    user_id,
+                    s3_file_path,
+                    transcript,
+                    ai_response,
+                    'completed'
+                ))
+                conn.commit()
+                logger.info("Complaint stored in database successfully")
+                
+            except Exception as db_error:
+                logger.error(f"Database error: {str(db_error)}")
+                # Don't return error to client, just log it
+                # The complaint processing was successful even if DB storage failed
+            
+            finally:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close()
+
+            return jsonify({
+                'success': True,
+                'transcript': transcript,
+                'response': ai_response
+            })
+
+        finally:
+            # Clean up temporary file
+            if temp_file_path and os.path.exists(temp_file_path):
+                try:
+                    os.unlink(temp_file_path)
+                    logger.info("Temporary file cleaned up successfully")
+                except Exception as cleanup_error:
+                    logger.warning(f"Failed to clean up temporary file: {str(cleanup_error)}")
 
     except Exception as e:
+        logger.error(f"Unexpected error in process_voice_complaint: {str(e)}")
+        logger.error(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
+def handle_preflight():
+    response = jsonify({'message': 'OK'})
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Access-Control-Allow-Credentials')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
+    return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
