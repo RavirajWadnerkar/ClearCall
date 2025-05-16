@@ -211,7 +211,7 @@ const Dashboard = () => {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Avg. Response Time</p>
-                    <h3 className="text-2xl font-bold">1.8s</h3>
+                    <h3 className="text-2xl font-bold">3.5s</h3>
                     <p className="text-xs text-green-600 flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" /> 
                       0.3s faster than target

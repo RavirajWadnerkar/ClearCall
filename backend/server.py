@@ -14,9 +14,13 @@ from awsConfig import upload_to_s3, AWS_BUCKET_NAME, s3_client
 import tempfile
 from functools import wraps
 import time
+<<<<<<< HEAD
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
+=======
+from twilio.rest import Client
+>>>>>>> 3a9dd5f617bd6604ea449f0f2c51b59df08493d1
 
 # Configure logging
 logging.basicConfig(
@@ -110,6 +114,20 @@ def init_db():
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """)
         
+        cursor.execute("""
+    CREATE TABLE IF NOT EXISTS inquiries (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        call_sid VARCHAR(64) NOT NULL,
+        caller_number VARCHAR(20),
+        recipient_number VARCHAR(20),
+        duration INT,
+        start_time DATETIME,
+        status VARCHAR(20),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+""")
+
+
         logger.info("Database tables initialized successfully")
         conn.commit()
 
@@ -286,6 +304,83 @@ def get_completed_calls():
         print(f"Error serving completed_calls.json: {e}")
         return jsonify({"error": "Failed to retrieve call data"}), 500
 
+@app.route('/api/sync-twilio-inquiries', methods=['POST'])
+def sync_twilio_logs():
+    try:
+        # Load Twilio credentials
+        account_sid = os.getenv('TWILIO_ACCOUNT_SID')
+        auth_token = os.getenv('TWILIO_AUTH_TOKEN')
+        phone_number = os.getenv('TWILIO_PHONE_NUMBER')
+        client = Client(account_sid, auth_token)
+
+        # Fetch all calls made TO your Twilio number
+        calls = client.calls.list(to=phone_number)
+
+        current_month = datetime.now().month
+        current_year = datetime.now().year
+
+        # Filter completed calls for this month
+        completed_calls = [
+            call for call in calls
+            if call.status == "completed" and call.start_time and call.start_time.month == current_month and call.start_time.year == current_year
+        ]
+
+        # Insert into inquiries table
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        insert_query = """
+            INSERT INTO inquiries (
+                call_sid, caller_number, recipient_number, duration, start_time, status
+            ) VALUES (%s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE duration=VALUES(duration), status=VALUES(status)
+        """
+
+        for call in completed_calls:
+            cursor.execute(insert_query, (
+                call.sid,
+                call._from,  # caller
+                call.to,     # recipient
+                int(call.duration) if call.duration else 0,
+                call.start_time.strftime('%Y-%m-%d %H:%M:%S'),
+                call.status
+            ))
+
+        conn.commit()
+        logger.info(f"Synced {len(completed_calls)} Twilio calls to 'inquiries' table")
+        return jsonify({"message": f"Synced {len(completed_calls)} calls"}), 200
+
+    except Exception as e:
+        logger.error(f"Twilio sync error: {str(e)}")
+        return jsonify({"error": "Failed to sync Twilio logs"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/api/monthly-summary', methods=['GET', 'OPTIONS'])
+def get_monthly_summary():
+    """Return monthly data for resolved vs escalated complaints."""
+    if request.method == 'OPTIONS':
+        return handle_preflight()
+        
+    try:
+        # For demo purposes, returning mock data
+        # In a production environment, this would query the database
+        return jsonify([
+            { "name": 'Jan', "resolved": 65, "escalated": 15 },
+            { "name": 'Feb', "resolved": 59, "escalated": 12 },
+            { "name": 'Mar', "resolved": 80, "escalated": 8 },
+            { "name": 'Apr', "resolved": 81, "escalated": 10 },
+            { "name": 'May', "resolved": 76, "escalated": 11 },
+            { "name": 'Jun', "resolved": 85, "escalated": 7 },
+        ]), 200
+    except Exception as e:
+        logger.error(f"Error fetching monthly summary: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """Handle file upload and store it in S3."""
@@ -311,7 +406,11 @@ def get_file_count():
     """Fetch the count of files in the S3 bucket."""
     try:
         response = s3_client.list_objects_v2(Bucket=AWS_BUCKET_NAME)
-        file_count = len(response.get('Contents', []))
+        contents = response.get('Contents', [])
+        
+        # Filter only PDF files
+        pdf_files = [obj for obj in contents if obj['Key'].lower().endswith('.pdf')]
+        file_count = len(pdf_files)
         return jsonify({"file_count": file_count}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -475,6 +574,52 @@ def process_voice_complaint():
         logger.error(f"Unexpected error in process_voice_complaint: {str(e)}")
         logger.error(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/complaint-summary', methods=['GET', 'OPTIONS'])
+def get_complaint_summary():
+    """Return summary data for AI resolved vs human escalated complaints."""
+    if request.method == 'OPTIONS':
+        return handle_preflight()
+        
+    try:
+        # For demo purposes, returning mock data
+        # In a production environment, this would query the database
+        return jsonify({
+            "ai_resolved": 72,
+            "human_escalated": 28
+        }), 200
+    except Exception as e:
+        logger.error(f"Error fetching complaint summary: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/claude', methods=['POST', 'OPTIONS'])
+def claude_chat():
+    """Handle chat messages with AI."""
+    if request.method == 'OPTIONS':
+        return handle_preflight()
+
+    try:
+        data = request.get_json()
+        user_message = data.get('message')
+
+        if not user_message:
+            return jsonify({"error": "No message provided"}), 400
+
+        # Generate AI response using the OpenAI client
+        chat_response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are One Piece Store Assistant, a helpful and knowledgeable AI assistant. Keep responses concise and clear."},
+                {"role": "user", "content": user_message}
+            ]
+        )
+
+        ai_reply = chat_response.choices[0].message.content
+        return jsonify({"reply": ai_reply}), 200
+
+    except Exception as e:
+        logger.error(f"Error in claude_chat: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 def handle_preflight():
     response = jsonify({'message': 'OK'})

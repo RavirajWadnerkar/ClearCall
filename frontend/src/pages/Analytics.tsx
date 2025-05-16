@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 import { 
   BarChart as BarChartIcon, 
   TrendingUp, 
@@ -32,19 +33,19 @@ import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 
 // Sample data for charts
-const resolutionData = [
-  { name: 'Jan', resolved: 65, escalated: 15 },
-  { name: 'Feb', resolved: 59, escalated: 12 },
-  { name: 'Mar', resolved: 80, escalated: 8 },
-  { name: 'Apr', resolved: 81, escalated: 10 },
-  { name: 'May', resolved: 76, escalated: 11 },
-  { name: 'Jun', resolved: 85, escalated: 7 },
-];
+// const resolutionData = [
+//   { name: 'Jan', resolved: 65, escalated: 15 },
+//   { name: 'Feb', resolved: 59, escalated: 12 },
+//   { name: 'Mar', resolved: 80, escalated: 8 },
+//   { name: 'Apr', resolved: 81, escalated: 10 },
+//   { name: 'May', resolved: 76, escalated: 11 },
+//   { name: 'Jun', resolved: 85, escalated: 7 },
+// ];
 
-const pieData = [
-  { name: 'Resolved by AI', value: 72 },
-  { name: 'Escalated to Humans', value: 28 },
-];
+// const pieData = [
+//   { name: 'Resolved by AI', value: 72 },
+//   { name: 'Escalated to Humans', value: 28 },
+// ];
 
 const COLORS = ['#0088FE', '#FF8042'];
 
@@ -57,7 +58,48 @@ const issueCategories = [
 ];
 
 const Analytics = () => {
+  const [pieData, setPieData] = useState([
+    { name: 'Resolved by AI', value: 0 },
+    { name: 'Escalated to Humans', value: 0 }
+  ]);
+  const [resolutionData, setResolutionData] = useState([]);
   const [activeView, setActiveView] = useState('overview');
+  const [fileCount, setFileCount] = useState(0);
+  const [completedCalls, setCompletedCalls] = useState(0);
+
+useEffect(() => {
+  // Trigger sync
+  axios.post('http://localhost:5000/api/sync-twilio-inquiries')
+    .then(res => console.log('Twilio sync complete:', res.data))
+    .catch(err => console.error('Twilio sync failed:', err));
+
+  // Fetch pie chart
+  axios.get('http://localhost:5000/api/complaint-summary')
+    .then(res => {
+      const { ai_resolved, human_escalated } = res.data;
+      setPieData([
+        { name: 'Resolved by AI', value: ai_resolved },
+        { name: 'Escalated to Humans', value: human_escalated }
+      ]);
+    })
+    .catch(err => console.error('Pie chart error:', err));
+
+  // Fetch bar chart
+  axios.get('http://localhost:5000/api/monthly-summary')
+    .then(res => setResolutionData(res.data))
+    .catch(err => console.error('Bar chart error:', err));
+
+  // Fetch file count
+  axios.get('http://localhost:5000/file-count')
+    .then(res => setFileCount(res.data.file_count))
+    .catch(err => console.error('File count error:', err));
+
+  // Fetch completed calls
+  axios.get('http://localhost:5000/api/completed-calls')
+    .then(res => setCompletedCalls(res.data.length))
+    .catch(err => console.error('Completed calls error:', err));
+}, []);
+
   
   return (
     <div className="min-h-screen bg-background">
@@ -117,13 +159,13 @@ const Analytics = () => {
                 >
                   Overview
                 </Button>
-                <Button 
+                {/* <Button 
                   variant={activeView === 'detailed' ? 'default' : 'outline'} 
                   size="sm"
                   onClick={() => setActiveView('detailed')}
                 >
                   Detailed Reports
-                </Button>
+                </Button> */}
               </div>
             </div>
             
@@ -149,7 +191,7 @@ const Analytics = () => {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Avg. Response Time</p>
-                    <h3 className="text-2xl font-bold">1.8s</h3>
+                    <h3 className="text-2xl font-bold">3.5s</h3>
                     <p className="text-xs text-green-600 flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" /> 
                       0.3s faster than target
@@ -164,9 +206,9 @@ const Analytics = () => {
               <div className="bg-white p-6 rounded-xl shadow-subtle border border-gray-100">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Total Complaints</p>
-                    <h3 className="text-2xl font-bold">355</h3>
-                    <p className="text-xs text-gray-500 mt-1">This month</p>
+                    <p className="text-sm text-gray-500 mb-1">Total Requests</p>
+                    <h3 className="text-2xl font-bold">{completedCalls}</h3>
+                    <p className="text-xs text-green-600 items-center mt-1"><TrendingUp className="h-3 w-3 mr-1" />This month</p>
                   </div>
                   <div className="bg-primary/10 p-2 rounded-lg">
                     <Mic className="h-6 w-6 text-primary" />
@@ -178,11 +220,8 @@ const Analytics = () => {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Policy Documents</p>
-                    <h3 className="text-2xl font-bold">24</h3>
-                    <p className="text-xs text-blue-600 flex items-center mt-1">
-                      <FileUp className="h-3 w-3 mr-1" /> 
-                      3 new this week
-                    </p>
+                    <h3 className="text-2xl font-bold">{fileCount}</h3>
+                      <p className="text-xs text-gray-500 mt-1">Active policies</p>
                   </div>
                   <div className="bg-primary/10 p-2 rounded-lg">
                     <FileUp className="h-6 w-6 text-primary" />
@@ -243,19 +282,22 @@ const Analytics = () => {
             
             {/* Common issues table */}
             <div className="bg-white p-6 rounded-xl shadow-subtle border border-gray-100">
-              <h3 className="text-lg font-semibold mb-4">Most Common Complaint Categories</h3>
+              <h3 className="text-lg font-semibold mb-4">Escalation to Human</h3>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Category
+                        ID
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Count
+                        Phone Number
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Percentage
+                        Date and Time
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Reason
                       </th>
                     </tr>
                   </thead>
